@@ -220,7 +220,7 @@ module LoadTest =
                 decorateWithLogger (log,verbose) execForClient
             | Some storeConfig, _ ->
                 let services = ServiceCollection()
-                let codecGen : Services.ICodecGen = Services.NewtonsoftJsonCodecGen() :> _ 
+                let codecGen : Services.ICodecGen = if a.Utf8Json then Services.Utf8JsonCodecGen() :> _ else Services.NewtonsoftJsonCodecGen() :> _ 
                 Samples.Infrastructure.Services.register(services, storeConfig, storeLog, codecGen)
                 let container = services.BuildServiceProvider()
                 let execForClient = Tests.executeLocal container test

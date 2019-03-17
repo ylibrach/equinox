@@ -57,3 +57,7 @@ let serializationSettings = Newtonsoft.Json.Converters.FSharp.Settings.CreateCor
 type NewtonsoftJsonCodecGen() =
     interface ICodecGen with
         member __.Generate() = Equinox.Codec.NewtonsoftJson.Json.Create<'Union>(serializationSettings)
+
+type Utf8JsonCodecGen() =
+    interface ICodecGen with
+        member __.Generate() = Equinox.Codec.Utf8Json.Json.Create<'Union>()

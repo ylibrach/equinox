@@ -15,6 +15,7 @@ type Arguments =
     | [<AltCommandLine("-S")>] LocalSeq
     | [<AltCommandLine("-C")>] Cached
     | [<AltCommandLine("-U")>] Unfolds
+    | Utf8Json
     | [<CliPrefix(CliPrefix.None); Last; Unique>] Memory of ParseResults<Storage.MemoryStore.Arguments>
     | [<CliPrefix(CliPrefix.None); Last; Unique>] Es of ParseResults<Storage.EventStore.Arguments>
     | [<CliPrefix(CliPrefix.None); Last; Unique>] Cosmos of ParseResults<Storage.Cosmos.Arguments>
@@ -24,6 +25,7 @@ type Arguments =
             | LocalSeq -> "configures writing to a local Seq endpoint at http://localhost:5341, see https://getseq.net"
             | Cached -> "employ a 50MB cache."
             | Unfolds -> "employ a store-appropriate Rolling Snapshots and/or Unfolding strategy."
+            | Utf8Json -> "switch to Utf8Json serializer (default: Newtonsoft.Json)"
             | Memory _ -> "specify In-Memory Volatile Store (Default store)."
             | Es _ -> "specify storage in EventStore (--help for options)."
             | Cosmos _ -> "specify storage in CosmosDb (--help for options)."
@@ -63,7 +65,7 @@ type Startup() =
             | _  | Some (Memory _) ->
                 log.Fatal("Web App is using Volatile Store; Storage options: {options:l}", options)
                 Storage.MemoryStore.config (), log
-        let codecGen : Services.ICodecGen = Services.NewtonsoftJsonCodecGen() :> _
+        let codecGen : Services.ICodecGen = if args.Contains Utf8Json then Services.Utf8JsonCodecGen() :> _ else Services.NewtonsoftJsonCodecGen() :> _
         Services.register(services, storeConfig, storeLog, codecGen)
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
