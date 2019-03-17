@@ -102,6 +102,7 @@ and [<NoComparison>]
     | [<AltCommandLine("-s")>] Size of int
     | [<AltCommandLine("-C")>] Cached
     | [<AltCommandLine("-U")>] Unfolds
+    | Utf8Json
     | [<AltCommandLine("-m")>] BatchSize of int
     | [<AltCommandLine("-f")>] TestsPerSecond of int
     | [<AltCommandLine("-d")>] DurationM of float
@@ -117,6 +118,7 @@ and [<NoComparison>]
             | Size _ -> "For `-t Todo`: specify random title length max size to use (default 100)."
             | Cached -> "employ a 50MB cache, wire in to Stream configuration."
             | Unfolds -> "employ a store-appropriate Rolling Snapshots and/or Unfolding strategy."
+            | Utf8Json -> "switch to Utf8Json serializer (default: Newtonsoft.Json)"
             | BatchSize _ -> "Maximum item count to supply when querying. Default: 500"
             | TestsPerSecond _ -> "specify a target number of requests per second (default: 1000)."
             | DurationM _ -> "specify a run duration in minutes (default: 30)."
@@ -127,9 +129,10 @@ and [<NoComparison>]
             | Cosmos _ -> "Run transactions in-process against CosmosDb."
             | Web _ -> "Run transactions against a Web endpoint."
 and TestInfo(args: ParseResults<TestArguments>) =
-    member __.Options = args.GetResults Cached @ args.GetResults Unfolds
+    member __.Options = args.GetResults Cached @ args.GetResults Unfolds @ args.GetResults Utf8Json
     member __.Cache = __.Options |> List.contains Cached
     member __.Unfolds = __.Options |> List.contains Unfolds
+    member __.Utf8Json = __.Options |> List.contains Utf8Json
     member __.BatchSize = args.GetResult(BatchSize,500)
     member __.Test = args.GetResult(Name,Test.Favorite)
     member __.ErrorCutoff = args.GetResult(ErrorCutoff,10000L)
@@ -217,7 +220,8 @@ module LoadTest =
                 decorateWithLogger (log,verbose) execForClient
             | Some storeConfig, _ ->
                 let services = ServiceCollection()
-                Samples.Infrastructure.Services.register(services, storeConfig, storeLog)
+                let codecGen : Services.ICodecGen = Services.NewtonsoftJsonCodecGen() :> _ 
+                Samples.Infrastructure.Services.register(services, storeConfig, storeLog, codecGen)
                 let container = services.BuildServiceProvider()
                 let execForClient = Tests.executeLocal container test
                 decorateWithLogger (log, verbose) execForClient
